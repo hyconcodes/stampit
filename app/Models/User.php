@@ -23,6 +23,10 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'avatar',
+        'otp',
+        'otp_expiry_at',
+        'is_verified',
+        'role_id',
     ];
 
     /**
@@ -33,6 +37,8 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'otp',
+        'otp_expiry_at',
     ];
 
     /**
@@ -53,5 +59,10 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 }
