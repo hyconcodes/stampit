@@ -29,11 +29,15 @@ class AuthController extends Controller
         ], [
             'email.regex' => 'Not a valid school email.',
         ]);
+        //extract matric number from email
+        $email = request('email');
+        $matricNumber = explode('.', explode('@', $email)[0])[1];
         $pic = 'https://api.dicebear.com/9.x/pixel-art/png?seed=' . request('name');
         $authCode = random_int(100000, 999999);
         $user = User::create([
             'name' => request('name'),
             'email' => request('email'),
+            'matric_no' => $matricNumber,
             'avatar' => $pic,
             'password' => Hash::make(request('password')),
             'otp' => $authCode,
@@ -44,7 +48,7 @@ class AuthController extends Controller
             Mail::to(request('email'))->send(new AuthCodeMail($authCode));
         } catch (\Exception $e) {
             Log::error('Mail sending failed: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to send the authentication email. Please try again.' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to send the authentication email. Please try again.', 'details' => $e->getMessage()], 500);
         }
         return response()->json(['user' => $user], 201);
     }
@@ -178,12 +182,22 @@ class AuthController extends Controller
 
     public function profile()
     {
-        $userdata = auth()->user();
+        //with user role
+        $user = User::with('role')->find(auth()->id());
 
         return response()->json([
             "status" => true,
             "message" => "Profile data",
-            "data" => $userdata
+            "data" => [
+                "id" => $user->id,
+                "name" => $user->name,
+                "email" => $user->email,
+                "avatar" => $user->avatar,
+                "role" => $user->role?->name,
+                "role_id" => $user->role_id,
+                "is_verified" => $user->is_verified,
+                "created_at" => $user->created_at,
+            ]
         ]);
     }
 
@@ -209,6 +223,23 @@ class AuthController extends Controller
         return response()->json([
             "status" => true,
             "message" => "User logged out successfully"
+        ]);
+    }
+
+    //delete user account
+    public function deleteAccount($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                "status" => false,
+                "message" => "User not found"
+            ]);
+        }
+        $user->delete();
+        return response()->json([
+            "status" => true,
+            "message" => "User account deleted successfully"
         ]);
     }
 }
