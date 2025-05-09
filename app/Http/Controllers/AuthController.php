@@ -76,7 +76,7 @@ class AuthController extends Controller
 
         $user->update(['otp' => null, 'otp_expiry_at' => null, 'email_verified_at' => now(), 'is_verified' => true]);
 
-        return response()->json(['message' => 'Account verified successfully.']);
+        return response()->json(['message' => 'Account verified successfully.', 'user' => $user]);
     }
 
     public function forgottenPassword(Request $request)
@@ -100,7 +100,7 @@ class AuthController extends Controller
             Log::error('Mail sending failed: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to send the password reset email. Please try again.'], 500);
         }
-        return response()->json(['message' => 'Password reset code sent to your email.']);
+        return response()->json(['message' => 'Password reset code sent to your email.', 'user' => $user]);
     }
 
     public function resetPassword(Request $request)
@@ -127,7 +127,7 @@ class AuthController extends Controller
 
         $user->update(['password' => Hash::make($request->password), 'otp' => null, 'otp_expiry_at' => null]);
 
-        return response()->json(['message' => 'Password reset successfully.']);
+        return response()->json(['message' => 'Password reset successfully.', 'user' => $user]);
     }
 
     public function login(Request $request)
@@ -170,7 +170,17 @@ class AuthController extends Controller
             return response()->json([
                 "status" => true,
                 "message" => "User logged in succcessfully",
-                "token" => $token
+                "token" => $token,
+                'user' => [
+                    "id" => $user->id,
+                    "name" => $user->name,
+                    "email" => $user->email,
+                    "avatar" => $user->avatar,
+                    "role" => $user->role?->name,
+                    "role_id" => $user->role_id,
+                    "is_verified" => $user->is_verified,
+                    "created_at" => $user->created_at,
+                ]
             ]);
         }
 
@@ -188,7 +198,7 @@ class AuthController extends Controller
         return response()->json([
             "status" => true,
             "message" => "Profile data",
-            "data" => [
+            "user" => [
                 "id" => $user->id,
                 "name" => $user->name,
                 "email" => $user->email,
